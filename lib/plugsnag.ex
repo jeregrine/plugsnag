@@ -13,15 +13,22 @@ defmodule Plugsnag do
         try do
           super(conn, opts)
         rescue
+          wrapper = %Elixir.Plug.Conn.WrapperError{} ->
+            %{kind: kind, reason: reason, stack: stack} = wrapper
+            report(Exception.normalize(kind, reason, stack))
           exception ->
-            stacktrace = System.stacktrace
-
-            exception
-            |> Bugsnag.report
-
-            reraise exception, stacktrace
+            report(exception)
         end
       end
     end
+  end
+
+  defp report(exception) do
+    stacktrace = System.stacktrace
+
+    exception
+    |> Bugsnag.report
+
+    reraise exception, stacktrace
   end
 end
